@@ -63,6 +63,8 @@ pub use crate::square::*;
 
 mod movegen;
 pub use crate::movegen::MoveGen;
+pub use crate::movegen::SquareAndBitBoard;
+pub use crate::movegen::MoveList;
 
 mod zobrist;
 

@@ -17,6 +17,10 @@ pub struct SquareAndBitBoard {
     promotion: bool,
 }
 
+/// Structure containing a square and a bitboard.
+/// The square represents a starting position, source.
+/// The bitboard represents all ending positions of the source square
+/// current implementation of this is for representing a move list for a piece
 impl SquareAndBitBoard {
     pub fn new(sq: Square, bb: BitBoard, promotion: bool) -> SquareAndBitBoard {
         SquareAndBitBoard {
@@ -24,6 +28,25 @@ impl SquareAndBitBoard {
             bitboard: bb,
             promotion: promotion,
         }
+    }
+    
+    #[inline(always)]
+    pub fn get_square(&self, ) -> &Square {
+        &self.square
+    }
+
+    #[inline(always)]
+    pub fn get_bitboard(&self, ) -> &BitBoard {
+        &self.bitboard
+    }
+
+    #[inline(always)]
+    pub fn get_promotion(&self, ) -> &bool {
+        &self.promotion
+    }
+
+    pub fn xor(&mut self, other: BitBoard) {
+        self.bitboard ^= other;
     }
 }
 
@@ -92,7 +115,7 @@ pub struct MoveGen {
 
 impl MoveGen {
     #[inline(always)]
-    fn enumerate_moves(board: &Board) -> MoveList {
+    pub fn enumerate_moves(board: &Board) -> MoveList {
         let checkers = *board.checkers();
         let mask = !board.color_combined(board.side_to_move());
         let mut movelist = NoDrop::new(ArrayVec::<[SquareAndBitBoard; 18]>::new());
@@ -116,6 +139,23 @@ impl MoveGen {
         }
 
         movelist
+    }
+
+    pub fn new(moves: MoveList, promotion_index: &usize) -> MoveGen {
+        MoveGen {
+            moves,
+            promotion_index: *promotion_index,
+            iterator_mask: !EMPTY,
+            index: 0
+        }
+    }
+
+    pub fn get_promotion_index(&self, ) -> &usize {
+        &self.promotion_index
+    }
+    
+    pub fn get_moves(&self, ) -> &MoveList {
+        &self.moves
     }
 
     /// Create a new `MoveGen` structure, only generating legal moves
@@ -330,6 +370,8 @@ impl Iterator for MoveGen {
         } else {
             // not a promotion move, so its a 'normal' move as far as this function is concerned
             let moves = &mut self.moves[self.index];
+            // This is equal to saying the following
+            // let dest = (moves.bitboard ^ BitBoard::from_square(move.square)).to_square();
             let dest = (moves.bitboard & self.iterator_mask).to_square();
 
             moves.bitboard ^= BitBoard::from_square(dest);
